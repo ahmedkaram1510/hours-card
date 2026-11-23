@@ -135,11 +135,6 @@ tr.row{background:var(--t,transparent)}
     </table></div>
     <div class="legend" id="legend"></div>
     <p class="note" data-i="tapNote"></p>
-    <div class="acts" style="margin-top:12px">
-      <button class="btn pri" id="cpT" type="button" data-i="cpT"></button>
-      <button class="btn" id="cpN" type="button" data-i="cpN"></button>
-    </div>
-    <textarea id="cpbox" hidden readonly></textarea>
   </section>
   <section class="card pay">
     <h2 data-i="payT"></h2>
@@ -279,10 +274,6 @@ $('frm').onsubmit=e=>{e.preventDefault();const k=editKey,old=recs[k]||null;const
 $('fDel').onclick=()=>{const k=editKey,old=recs[k]||null;$('dlg').classList.remove('on');saveDay(k,null);toast(t('deleted'),()=>saveDay(k,old))};
 $('fX').onclick=()=>$('dlg').classList.remove('on');
 $('dlg').onclick=e=>{if(e.target.id==='dlg')$('dlg').classList.remove('on')};
-async function copy(txt){const box=$('cpbox');try{await navigator.clipboard.writeText(txt);box.hidden=true;toast(t('copied'))}catch(e){box.hidden=false;box.value=txt;box.focus();box.select();toast(t('copyMan'))}}
-const nf=()=>workdays(period(offset)).filter(k=>parseKey(k).getDay()!==5);
-$('cpT').onclick=()=>copy(nf().map(k=>{const r=recs[k]||{};return ampm(r.in)+'\t'+ampm(r.out)}).join('\n'));
-$('cpN').onclick=()=>copy(nf().map(k=>(recs[k]||{}).st||'').join('\n'));
 let cfgT;function cfgSave(){clearTimeout(cfgT);cfgT=setTimeout(()=>{cfg={target:+$('sTarget').value||8.4,tol:+$('sTol').value||0,salary:+$('sSal').value||0};ls.set('gh_cfg',cfg);render();if(KEY)post({action:'cfg',cfg}).catch(()=>{})},900)}
 $('sTarget').oninput=cfgSave;$('sTol').oninput=cfgSave;$('sSal').oninput=cfgSave;
 $('sTarget').value=cfg.target;$('sTol').value=cfg.tol;$('sSal').value=cfg.salary;
