@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0f3a44">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>كارت الساعات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, exact, a tool used at the gate in five seconds
+   IDEA: a staff time-clock card — punch in, punch out, the card keeps the score
+   PICTURE: a large dial filling toward today's 8:24 target, live
+   COLOUR and TYPE: deep petrol ground, white card, signal orange for the punch; Tajawal
+   LAYOUT: one column on phone: dial, punch button, three figures, then the card of days */
+:root{color-scheme:light dark;--bg:light-dark(#f3f5f4,#0c1a1f);--card:light-dark(#fff,#13262d);--ink:light-dark(#0d2229,#e8f1f0);--mute:light-dark(#5a6f74,#93aaad);--line:light-dark(#dfe6e5,#24393f);--deep:#0f3a44;--acc:#ff6a2b;--ok:light-dark(#127a4f,#45c98b);--bad:light-dark(#c8322a,#ff7a70)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Tajawal,"Noto Kufi Arabic",system-ui,sans-serif;overflow-x:clip}
+.top{background:var(--deep);color:#eaf4f2;padding:22px max(5vw,16px) 70px}
+.top h1{margin:0;font-size:clamp(24px,5vw,34px);line-height:1.1;font-weight:800}
+.top p{margin:4px 0 0;color:#a9c7c6;font-size:15px}
+.wrap{max-width:760px;margin:-56px auto 0;padding:0 max(4vw,12px) 40px}
+.hero{background:var(--card);border-radius:22px;padding:22px 18px;box-shadow:0 10px 30px #0002;display:grid;gap:18px;justify-items:center}
+.dial{position:relative;width:min(240px,70vw);aspect-ratio:1}
+.dial svg{width:100%;height:100%;transform:rotate(-90deg)}
+.dial .c{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.big{font-size:clamp(40px,12vw,54px);font-weight:800;line-height:1;direction:ltr;font-variant-numeric:tabular-nums}
+.sub{color:var(--mute);font-size:14px}
+.punch{width:100%;max-width:420px;min-height:64px;border:0;border-radius:16px;background:var(--acc);color:#fff;font:800 22px Tajawal,sans-serif;cursor:pointer}
+.punch.out{background:var(--deep)}
+.punch:disabled{opacity:.6}
+.punch:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.leave{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;max-width:420px}
+.leave div{background:var(--bg);border-radius:12px;padding:10px;text-align:center}
+.leave b{display:block;font-size:24px;direction:ltr;font-variant-numeric:tabular-nums}
+.leave span{font-size:13px;color:var(--mute)}
+.figs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.fig3{background:var(--card);border-radius:14px;padding:12px;text-align:center}
+.fig3 b{display:block;font-size:clamp(22px,6vw,30px);direction:ltr;font-variant-numeric:tabular-nums}
+.fig3 span{font-size:13px;color:var(--mute)}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.card{background:var(--card);border-radius:18px;padding:14px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.bar h2{margin:0;font-size:19px}
+.btn{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:500 15px Tajawal,sans-serif;cursor:pointer}
+.btn.pri{background:var(--deep);color:#fff;border-color:var(--deep)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{font-weight:500;color:var(--mute);font-size:13px;text-align:start;padding:6px 4px;border-bottom:1px solid var(--line)}
+td{padding:9px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n{direction:ltr;text-align:end;font-variant-numeric:tabular-nums}
+tr.row{cursor:pointer}tr.row:hover{background:var(--bg)}
+tr.today td{font-weight:700}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;background:var(--bg);color:var(--mute)}
+.tag.w{background:#ff6a2b22;color:var(--acc)}
+.scroll{overflow-x:auto}
+.banner{display:none;margin:12px 0;padding:10px 12px;border-radius:12px;background:#ff6a2b22;color:var(--ink);font-size:14px}
+.banner.on{display:block}
+.toast{position:fixed;inset-inline:12px;bottom:16px;max-width:480px;margin:auto;background:var(--ink);color:var(--bg);border-radius:14px;padding:12px 14px;display:none;align-items:center;justify-content:space-between;gap:10px;z-index:9}
+.toast.on{display:flex}
+.toast button{background:none;border:0;color:var(--acc);font:700 16px Tajawal,sans-serif;min-height:40px;cursor:pointer}
+.dlg{position:fixed;inset:0;background:#0008;display:none;place-items:center;padding:16px;z-index:8}
+.dlg.on{display:grid}
+.dlg form{background:var(--card);border-radius:18px;padding:18px;width:100%;max-width:400px;display:grid;gap:12px}
+.dlg h3{margin:0;font-size:19px}
+label{display:grid;gap:4px;font-size:14px;color:var(--mute)}
+input,select{font:16px Tajawal,sans-serif;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);padding:0 10px}
+.acts{display:flex;gap:8px;flex-wrap:wrap}
+details{margin-top:16px}summary{cursor:pointer;color:var(--mute);min-height:44px;display:flex;align-items:center}
+.set{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea{width:100%;min-height:120px;font:14px monospace;direction:ltr;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.note{font-size:13px;color:var(--mute);margin:8px 0 0}
+@media(max-width:520px){.figs{grid-template-columns:repeat(2,minmax(0,1fr))}.hide-s{display:none}td,th{padding-inline:2px}table{font-size:14px}}
+@media(prefers-reduced-motion:no-preference){#arc{transition:stroke-dashoffset .6s}}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.lang{min-height:40px;padding:0 14px;border-radius:99px;border:1px solid #ffffff55;background:transparent;color:#fff;font:700 15px Tajawal,sans-serif;cursor:pointer}
+tr.row td:first-child{border-inline-start:5px solid var(--c,transparent)}
+tr.row{background:var(--t,transparent)}
+.tag{background:var(--t,var(--bg));color:var(--ink)}
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.legend span{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--t);border-inline-start:4px solid var(--c)}
+.comp{margin:0 0 16px;padding:12px 14px;border-radius:14px;background:#30a46c22;font-size:15px;display:none}
+.comp.on{display:block}
+.pay{margin-top:16px}
+.pay h2{margin:0 0 10px;font-size:19px}
+.prow{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.prow b{direction:ltr;font-variant-numeric:tabular-nums;white-space:nowrap}
+.prow.net{border:0;font-size:20px;font-weight:800}
+.set{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:520px){.set{grid-template-columns:1fr}}
+[dir=ltr] .leave b,[dir=ltr] .fig3 b{direction:ltr}
+.sync{margin:10px 0 0;text-align:center;font-size:14px;color:var(--mute)}.sync.wait{color:var(--acc);font-weight:700}
+</style>
+</head>
+<body>
+<header class="top">
+  <div><h1 data-i="title"></h1><p id="per"></p></div>
+  <button class="lang" id="lang" type="button">English</button>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div class="dial">
+      <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="var(--line)" stroke-width="10"/><circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="var(--acc)" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"/></svg>
+      <div class="c"><div class="big" id="now">0:00</div><div class="sub" id="nowsub"></div></div>
+    </div>
+    <button class="punch" id="punch" type="button"></button>
+    <div class="leave">
+      <div><b id="lv1">—</b><span data-i="lv1"></span></div>
+      <div><b id="lv2">—</b><span data-i="lv2"></span></div>
+    </div>
+  </section>
+  <div class="banner" id="ban"></div>
+  <p class="sync" id="sync"></p>
+  <section class="figs">
+    <div class="fig3"><b id="bal">0:00</b><span data-i="bal"></span></div>
+    <div class="fig3"><b id="tot">0:00</b><span data-i="tot"></span></div>
+    <div class="fig3"><b id="mis">0</b><span data-i="mis"></span></div>
+    <div class="fig3"><b id="cmp">0</b><span data-i="cmp"></span></div>
+  </section>
+  <div class="comp" id="compnote"></div>
+  <section class="card">
+    <div class="bar">
+      <h2 data-i="days"></h2>
+      <div class="acts">
+        <button class="btn" id="prev" type="button" data-i="prev"></button>
+        <button class="btn" id="next" type="button" data-i="next"></button>
+      </div>
+    </div>
+    <div class="scroll"><table>
+      <thead><tr><th data-i="thDay"></th><th data-i="thIn"></th><th data-i="thOut"></th><th data-i="thH"></th><th data-i="thB"></th><th class="hide-s" data-i="thS"></th></tr></thead>
+      <tbody id="rows"></tbody>
+    </table></div>
+    <div class="legend" id="legend"></div>
+    <p class="note" data-i="tapNote"></p>
+    <div class="acts" style="margin-top:12px">
+      <button class="btn pri" id="cpT" type="button" data-i="cpT"></button>
+      <button class="btn" id="cpN" type="button" data-i="cpN"></button>
+    </div>
+    <textarea id="cpbox" hidden readonly></textarea>
+  </section>
+  <section class="card pay">
+    <h2 data-i="payT"></h2>
+    <div id="pay"></div>
+    <p class="note" data-i="payNote"></p>
+  </section>
+  <details>
+    <summary data-i="settings"></summary>
+    <div class="set">
+      <label><span data-i="sTarget"></span><input id="sTarget" type="number" step="0.1" inputmode="decimal"></label>
+      <label><span data-i="sTol"></span><input id="sTol" type="number" step="0.5" inputmode="decimal"></label>
+      <label><span data-i="sSal"></span><input id="sSal" type="number" step="10" inputmode="numeric"></label>
+    </div>
+    <p class="note" data-i="rules"></p>
+  </details>
+</main>
+<div class="dlg" id="dlg"><form id="frm">
+  <h3 id="dT"></h3>
+  <label><span data-i="fIn"></span><input id="fIn" type="time" step="1"></label>
+  <label><span data-i="fOut"></span><input id="fOut" type="time" step="1"></label>
+  <label><span data-i="fSt"></span><select id="fSt"></select></label>
+  <div class="acts"><button class="btn pri" type="submit" data-i="save"></button><button class="btn" type="button" id="fDel" data-i="del"></button><button class="btn" type="button" id="fX" data-i="cancel"></button></div>
+</form></div>
+<div class="toast" id="toast"><span id="tMsg"></span><button type="button" id="tUndo" data-i="undo"></button></div>
+<script>
+{
+const $=id=>document.getElementById(id);
+const STS=['Day-Off','Holiday','Annual','Accidental','Missing','Sick','Compansation','Hours'];
+const COL={'Day-Off':'#30a46c','Holiday':'#3e63dd','Annual':'#8e4ec6','Accidental':'#e2a336','Missing':'#e5484d','Sick':'#d6409f','Compansation':'#12a594','Hours':'#ad7f58'};
+const L={
+ar:{title:'كارت الساعات',per:'الفترة من {a} لـ {b}',lv1:'تمشي وتكمّل يومك',lv2:'تمشي ورصيد الفترة صفر',bal:'رصيد الفترة دلوقتي',tot:'ساعات اشتغلتها',mis:'أيام غياب',cmp:'أيام تعويض ليك',days:'أيام الفترة',prev:'السابقة',next:'التالية',thDay:'اليوم',thIn:'دخول',thOut:'خروج',thH:'ساعات',thB:'الرصيد',thS:'الحالة',tapNote:'اضغط على أي يوم لتعديل وقته أو حالته، والأيام اللي عليها علامة لسه ناقصة تسجيل',cpT:'نسخ الدخول والخروج للإكسل',cpN:'نسخ الحالات',payT:'المرتب المتوقع للفترة',payNote:'تقدير بنفس معادلات شيت الإكسل، وبيتحدث لحظة بلحظة، يعني لو مشيت دلوقتي ده اللي هيتخصم',settings:'الإعدادات',sTarget:'ساعات اليوم المطلوبة',sTol:'سماحية الفترة بالساعات',sSal:'المرتب الأساسي',rules:'الفترة من يوم ١١ لـ يوم ١٠، الجمعة مش محسوبة، يوم الإجازة لو اشتغلت فيه ٤ ساعات أو أكتر يتحسب يوم كامل ويبقالك يوم تعويض',fIn:'وقت الدخول',fOut:'وقت الخروج',fSt:'الحالة',save:'حفظ',del:'مسح اليوم',cancel:'إلغاء',undo:'تراجع',edit:'تعديل يوم {d}',pIn:'تسجيل دخول',pOut:'تسجيل خروج',pUpd:'تحديث وقت الخروج',pBusy:'جاري التسجيل…',subT:'من {t} النهارده',subOff:'يوم إجازة، ٤ ساعات تحسبه يوم كامل',okIn:'اتسجل الدخول {t}',okOut:'اتسجل الخروج {t}',saved:'اتحفظ التعديل',deleted:'اتمسح اليوم',err:'التسجيل محصلش، اتأكد من النت وجرّب تاني',synced:'متزامن مع الشيت، آخر تحديث {t}',pending:'{n} تسجيل محفوظ على الموبايل، هيترفع أول ما النت يرجع',noKey:'الصفحة مش مربوطة بالشيت، افتح لينك الإعداد مرة واحدة',badKey:'مفتاح الربط غلط، افتح لينك الإعداد تاني',empty:'لسه مفيش أيام في الفترة دي',miss:'ناقص',copied:'اتنسخ، الصقه في الإكسل من أول صف الفترة',copyMan:'حدد النص اللي ظاهر وانسخه',normal:'يوم شغل عادي',compN:'ليك {n} يوم تعويض لسه ماخدتهمش، كسبتهم من {d}',compNeg:'أخدت تعويض أكتر من الإجازات اللي اشتغلت فيها بـ {n} يوم، راجع الحالات',am:'ص',pm:'م',days7:['أحد','اتنين','تلات','أربع','خميس','جمعة','سبت'],
+ pay:['المرتب الأساسي','خصم الساعة','خصم يوم الغياب','رصيد الساعات بالسماحية','خصم العجز','خصم الغياب','الصافي المتوقع'],cur:'ج.م',
+ st:{'Day-Off':'إجازة','Holiday':'إجازة رسمية','Annual':'سنوي','Accidental':'عارضة','Missing':'غياب','Sick':'مرضي','Compansation':'تعويض','Hours':'ساعات إضافية'}},
+en:{title:'Hours card',per:'Period {a} to {b}',lv1:'Leave to finish today',lv2:'Leave with period at zero',bal:'Period balance now',tot:'Hours worked',mis:'Missing days',cmp:'Comp days owed',days:'Days in period',prev:'Previous',next:'Next',thDay:'Day',thIn:'In',thOut:'Out',thH:'Hours',thB:'Balance',thS:'Status',tapNote:'Tap any day to edit its times or status. Days marked missing still need times.',cpT:'Copy in/out for Excel',cpN:'Copy statuses',payT:'Expected pay this period',payNote:'Same formulas as the Excel sheet, updated live: if you left now, this is what would be deducted.',settings:'Settings',sTarget:'Required hours per day',sTol:'Period tolerance (hours)',sSal:'Base salary',rules:'Period runs 11th to 10th, Fridays excluded. Working 4+ hours on a day off counts as a full day and earns a compensation day.',fIn:'Arrival',fOut:'Departure',fSt:'Status',save:'Save',del:'Clear day',cancel:'Cancel',undo:'Undo',edit:'Edit {d}',pIn:'Punch in',pOut:'Punch out',pUpd:'Update departure',pBusy:'Saving…',subT:'of {t} today',subOff:'Day off: 4 hours counts as a full day',okIn:'Punched in at {t}',okOut:'Punched out at {t}',saved:'Saved',deleted:'Day cleared',err:'Not saved. Check your connection and try again.',synced:'Synced with the sheet at {t}',pending:'{n} punch(es) saved on this phone, will upload when online',noKey:'Not linked to the sheet yet. Open the setup link once.',badKey:'Wrong link key. Open the setup link again.',empty:'No days in this period yet',miss:'missing',copied:'Copied. Paste into Excel at the first row of the period.',copyMan:'Select the text shown and copy it',normal:'Normal work day',compN:'You have {n} compensation day(s) not taken yet, earned on {d}',compNeg:'You took {n} more compensation day(s) than you earned; check the statuses',am:'AM',pm:'PM',days7:['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],
+ pay:['Base salary','Per shortage hour','Per missing day','Hours balance incl. tolerance','Shortage deduction','Missing deduction','Expected net'],cur:'EGP',
+ st:{'Day-Off':'Day off','Holiday':'Holiday','Annual':'Annual','Accidental':'Accidental','Missing':'Missing','Sick':'Sick','Compansation':'Compensation','Hours':'Hours'}}};
+let lang='ar';try{lang=localStorage.getItem('gh_lang')||'ar'}catch(e){}
+const t=(k,v)=>{let s=L[lang][k];if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s};
+let recs={},cfg={target:8.4,tol:3,salary:0},offset=0,undoFn=null,editKey=null,busy=false,synced='';
+const pad=n=>String(n).padStart(2,'0');
+const keyOf=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const parseKey=k=>{const[a,b,c]=k.split('-').map(Number);return new Date(a,b-1,c)};
+const nowStr=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds())};
+const secs=x=>{if(!x)return null;const p=x.split(':').map(Number);return p[0]*3600+p[1]*60+(p[2]||0)};
+const hm=h=>{const s=h<0?'-':'';h=Math.abs(h);let m=Math.round(h*60);return s+Math.floor(m/60)+':'+pad(m%60)};
+const clock=sec=>{sec=((sec%86400)+86400)%86400;let h=Math.floor(sec/3600),m=Math.floor(sec%3600/60);const ap=h<12?t('am'):t('pm');h=h%12||12;return h+':'+pad(m)+' '+ap};
+const ampm=x=>{if(!x)return '';let[h,m,s]=x.split(':').map(Number);const ap=h<12?'AM':'PM';h=h%12||12;return h+':'+pad(m)+':'+pad(s||0)+' '+ap};
+const short=x=>x?clock(secs(x)):'';
+const money=n=>Math.round(n).toLocaleString('en-US')+' '+t('cur');
+const dlabel=k=>{const d=parseKey(k);return t('days7')[d.getDay()]+' '+d.getDate()+'/'+(d.getMonth()+1)};
+function period(off){const n=new Date();let y=n.getFullYear(),m=n.getMonth();if(n.getDate()<11)m--;m+=off;return{s:new Date(y,m,11),e:new Date(y,m+1,10)}}
+function workdays(p){const out=[];for(let d=new Date(p.s);d<=p.e;d.setDate(d.getDate()+1)){const k=keyOf(d);if(d.getDay()!==5||recs[k])out.push(k)}return out}
+function raw(k,live){const r=recs[k]||{};let a=secs(r.in),b=secs(r.out);if(a!=null&&b==null&&live)b=secs(nowStr());if(a==null||b==null)return null;return((b-a)/3600+24)%24}
+function calc(k,live){const r=recs[k]||{},T=+cfg.target,h=raw(k,live);
+  if(h==null)return{h:null,bal:null};
+  if(r.st==='Day-Off')return{h:h>=4?T:h,bal:0};
+  if(r.st==='Hours')return{h,bal:h};
+  return{h,bal:h-T}}
+function tint(st){return st&&COL[st]?'--c:'+COL[st]+';--t:'+COL[st]+'2b':''}
+function texts(){document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';document.title=t('title');
+  document.querySelectorAll('[data-i]').forEach(el=>{el.textContent=t(el.dataset.i)});
+  $('lang').textContent=lang==='ar'?'English':'عربي';
+  $('fSt').innerHTML='<option value="">'+t('normal')+'</option>'+STS.map(s=>'<option value="'+s+'">'+t('st')[s]+'</option>').join('');
+  $('legend').innerHTML=STS.map(s=>'<span style="'+tint(s)+'">'+t('st')[s]+'</span>').join('')}
+function render(){
+  const today=keyOf(new Date()),p=period(offset),cur=period(0),T=+cfg.target,tol=+cfg.tol;
+  const f=d=>d.getDate()+'/'+(d.getMonth()+1);
+  $('per').textContent=t('per',{a:f(p.s),b:f(p.e)+'/'+p.e.getFullYear()});
+  $('next').disabled=offset>=0;
+  let bal=tol,tot=0,mis=0;const rows=[];
+  for(const k of workdays(p)){const r=recs[k]||{},c=calc(k,k===today);
+    if(c.h!=null){tot+=c.h;bal+=c.bal}
+    if(r.st==='Missing')mis++;
+    if(k>today)continue;
+    const warn=k<today&&!r.st&&(!r.in||!r.out);
+    rows.push('<tr class="row'+(k===today?' today':'')+'" style="'+tint(r.st)+'" data-k="'+k+'" tabindex="0"><td>'+dlabel(k)+(warn?' <span class="tag w">'+t('miss')+'</span>':'')+'</td><td class="n">'+short(r.in)+'</td><td class="n">'+(r.out?short(r.out):(r.in&&k===today?'…':''))+'</td><td class="n">'+(c.h!=null?hm(c.h):'')+'</td><td class="n '+(c.bal>0?'pos':c.bal<0?'neg':'')+'">'+(c.bal!=null?hm(c.bal):'')+'</td><td class="hide-s">'+(r.st?'<span class="tag">'+t('st')[r.st]+'</span>':'')+'</td></tr>')}
+  $('rows').innerHTML=rows.reverse().join('')||'<tr><td colspan="6" class="note">'+t('empty')+'</td></tr>';
+  $('bal').textContent=hm(bal);$('bal').className=bal<0?'neg':'pos';
+  $('tot').textContent=hm(tot);$('mis').textContent=mis;
+  // compensation, all time
+  const earned=Object.keys(recs).filter(k=>recs[k].st==='Day-Off'&&(raw(k,false)||0)>=4).sort();
+  const taken=Object.keys(recs).filter(k=>recs[k].st==='Compansation').length;
+  const owed=earned.length-taken;$('cmp').textContent=owed;
+  const cn=$('compnote');
+  if(owed>0){cn.textContent=t('compN',{n:owed,d:earned.slice(-owed).map(dlabel).join('، ')});cn.classList.add('on')}
+  else if(owed<0){cn.textContent=t('compNeg',{n:-owed});cn.classList.add('on')}else cn.classList.remove('on');
+  // pay
+  const S=+cfg.salary||0,hr=Math.ceil(S/22/T),dy=Math.ceil(S/30),sd=Math.max(0,-bal)*hr,md=mis*dy;
+  const P=t('pay');
+  $('pay').innerHTML=[[P[0],money(S)],[P[1],money(hr)],[P[2],money(dy)],[P[3],hm(bal)],[P[4],money(sd)],[P[5],money(md)]].map(x=>'<div class="prow"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join('')+'<div class="prow net"><span>'+P[6]+'</span><b class="'+(sd+md>0?'neg':'pos')+'">'+money(S-sd-md)+'</b></div>';
+  // today
+  const r=recs[today]||{},c=calc(today,true),h=c.h||0,a=secs(r.in);
+  $('now').textContent=hm(h);
+  $('arc').style.strokeDashoffset=326.7*(1-Math.min(1,h/T));
+  if(r.st==='Day-Off'){$('nowsub').textContent=t('subOff');$('lv1').textContent=a!=null?clock(a+4*3600):'—';$('lv2').textContent='—'}
+  else{$('nowsub').textContent=t('subT',{t:hm(T)});
+    $('lv1').textContent=a!=null?clock(a+T*3600):'—';
+    let base=tol;for(const k of workdays(cur)){const cc=calc(k,false);if(k!==today&&cc.bal!=null)base+=cc.bal}
+    $('lv2').textContent=a!=null?clock(a+Math.max(0,T-base)*3600):'—'}
+  const pb=$('punch');pb.textContent=(r.in?(r.out?t('pUpd'):t('pOut')):t('pIn'));pb.classList.toggle('out',!!r.in);
+}
+function banner(x){$('ban').textContent=x||'';$('ban').classList.toggle('on',!!x)}
+function toast(msg,undo){$('tMsg').textContent=msg;undoFn=undo||null;$('tUndo').style.display=undo?'':'none';$('toast').classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>$('toast').classList.remove('on'),7000)}
+const API='https://script.google.com/macros/s/AKfycbw92M2B2iooqYPPSyXMbmm4Xt63O3_87IHvapQY7HXmJ1u-5eCI2jG9qQS_Gpwt6SrB/exec';
+let KEY='';try{KEY=localStorage.getItem('gh_key')||''}catch(e){}
+{const m=location.hash.match(/k=([\w-]+)/);if(m){KEY=m[1];try{localStorage.setItem('gh_key',KEY)}catch(e){}history.replaceState(null,'',location.pathname)}}
+const ls={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let base=ls.get('gh_base',{}),queue=ls.get('gh_q',[]);cfg=Object.assign(cfg,ls.get('gh_cfg',{}));synced=ls.get('gh_synced','');
+function applyOp(m,op){const o=Object.assign({},m[op.k]||{});
+  if(op.f==='in'){if(!o.in||op.t<o.in)o.in=op.t}else if(op.f==='out'){if(!o.out||op.t>o.out)o.out=op.t}
+  else{if(op.rec&&(op.rec.in||op.rec.out||op.rec.st)){m[op.k]=Object.assign({},op.rec);Object.keys(m[op.k]).forEach(x=>{if(!m[op.k][x])delete m[op.k][x]})}else delete m[op.k];return}
+  m[op.k]=o}
+function rebuild(){const m=JSON.parse(JSON.stringify(base));queue.forEach(op=>applyOp(m,op));recs=m;render()}
+function syncLine(){const el=$('sync');if(!KEY){el.textContent=t('noKey');el.className='sync wait';return}
+  if(queue.length){el.textContent=t('pending',{n:queue.length});el.className='sync wait'}else{el.textContent=synced?t('synced',{t:synced}):'';el.className='sync'}}
+let flying=false;
+async function post(body){const r=await fetch(API,{method:'POST',body:JSON.stringify(Object.assign({key:KEY},body))});const d=await r.json();if(d.error)throw new Error(d.error);return d}
+async function flush(){if(flying||!KEY)return;flying=true;const sending=queue.slice();
+  try{const d=await post(sending.length?{action:'ops',ops:sending}:{action:'get'});
+    queue=queue.slice(sending.length);ls.set('gh_q',queue);base=d.recs||{};ls.set('gh_base',base);
+    if(d.cfg){cfg=Object.assign(cfg,d.cfg);ls.set('gh_cfg',cfg);$('sTarget').value=cfg.target;$('sTol').value=cfg.tol;$('sSal').value=cfg.salary}
+    synced=clock(secs(nowStr()));ls.set('gh_synced',synced);banner('')}
+  catch(e){if(String(e.message)==='auth')banner(t('badKey'))}
+  finally{flying=false;rebuild();syncLine()}}
+function enqueue(op){queue.push(op);ls.set('gh_q',queue);rebuild();syncLine();flush()}
+function saveDay(k,rec){enqueue({k,rec:rec||null})}
+$('lang').onclick=()=>{lang=lang==='ar'?'en':'ar';try{localStorage.setItem('gh_lang',lang)}catch(e){}texts();render();syncLine()};
+$('punch').onclick=()=>{const k=keyOf(new Date()),tm=nowStr(),prev=recs[k]?Object.assign({},recs[k]):null,f=prev&&prev.in?'out':'in';enqueue({k,f,t:tm});toast(t(f==='in'?'okIn':'okOut',{t:short(tm)}),()=>saveDay(k,prev))};
+$('tUndo').onclick=()=>{if(undoFn)undoFn();undoFn=null;$('toast').classList.remove('on')};
+$('prev').onclick=()=>{offset--;render()};$('next').onclick=()=>{if(offset<0){offset++;render()}};
+function openEdit(k){editKey=k;const r=recs[k]||{};$('dT').textContent=t('edit',{d:dlabel(k)});$('fIn').value=r.in||'';$('fOut').value=r.out||'';$('fSt').value=r.st||'';$('dlg').classList.add('on');$('fIn').focus()}
+$('rows').onclick=e=>{const tr=e.target.closest('tr[data-k]');if(tr)openEdit(tr.dataset.k)};
+$('rows').onkeydown=e=>{const tr=e.target.closest('tr[data-k]');if(tr&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openEdit(tr.dataset.k)}};
+const fix=v=>v?(v.length===5?v+':00':v):'';
+$('frm').onsubmit=e=>{e.preventDefault();const k=editKey,old=recs[k]||null;const r={in:fix($('fIn').value),out:fix($('fOut').value),st:$('fSt').value};
+  $('dlg').classList.remove('on');saveDay(k,r);toast(t('saved'),()=>saveDay(k,old))};
+$('fDel').onclick=()=>{const k=editKey,old=recs[k]||null;$('dlg').classList.remove('on');saveDay(k,null);toast(t('deleted'),()=>saveDay(k,old))};
+$('fX').onclick=()=>$('dlg').classList.remove('on');
+$('dlg').onclick=e=>{if(e.target.id==='dlg')$('dlg').classList.remove('on')};
+async function copy(txt){const box=$('cpbox');try{await navigator.clipboard.writeText(txt);box.hidden=true;toast(t('copied'))}catch(e){box.hidden=false;box.value=txt;box.focus();box.select();toast(t('copyMan'))}}
+const nf=()=>workdays(period(offset)).filter(k=>parseKey(k).getDay()!==5);
+$('cpT').onclick=()=>copy(nf().map(k=>{const r=recs[k]||{};return ampm(r.in)+'\t'+ampm(r.out)}).join('\n'));
+$('cpN').onclick=()=>copy(nf().map(k=>(recs[k]||{}).st||'').join('\n'));
+let cfgT;function cfgSave(){clearTimeout(cfgT);cfgT=setTimeout(()=>{cfg={target:+$('sTarget').value||8.4,tol:+$('sTol').value||0,salary:+$('sSal').value||0};ls.set('gh_cfg',cfg);render();if(KEY)post({action:'cfg',cfg}).catch(()=>{})},900)}
+$('sTarget').oninput=cfgSave;$('sTol').oninput=cfgSave;$('sSal').oninput=cfgSave;
+$('sTarget').value=cfg.target;$('sTol').value=cfg.tol;$('sSal').value=cfg.salary;
+texts();rebuild();syncLine();flush();setInterval(()=>{render();if(queue.length)flush()},30000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)flush()});
+window.addEventListener('online',flush);
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
